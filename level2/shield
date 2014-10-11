@@ -26,6 +26,7 @@ function rejectRequest(reqData) {
 var Queue = function (proxies, parameters) {
   this.proxies = proxies;
   this.parameters = parameters;
+  this.hash = {};
 };
 Queue.prototype.takeRequest = function (reqData) {
   // Reject traffic as necessary:
@@ -34,6 +35,19 @@ Queue.prototype.takeRequest = function (reqData) {
   //   return;
   // }
   // Otherwise proxy it through:
+
+  var ip = ipFromRequest(reqData);
+  if (this.hash[ip] > 10) {
+    rejectRequest(reqData);
+    return;
+  }
+
+  if (this.hash[ip] === undefined) {
+    this.hash[ip] = 1;
+  } else {
+    this.hash[ip] += 1;
+  }
+
   this.proxies[0].proxyRequest(reqData.request, reqData.response, reqData.buffer);
 };
 Queue.prototype.requestFinished = function () {
